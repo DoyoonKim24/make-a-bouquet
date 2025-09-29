@@ -3,7 +3,6 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const Bouquet = require('./models/bouquet.model');
 const BouquetAnalyzer = require('./bouquet-analyzer');
-const aws = require('aws-sdk');
 require('dotenv').config();
 
 const app = express();
@@ -21,53 +20,171 @@ mongoose.connect(process.env.MONGODB_URI)
     console.error('MongoDB connection error:', err);
 });
 
-const s3 = new aws.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
-})
-const bucket = process.env.S3_BUCKET_NAME;
+// Initialize analyzer
+const analyzer = new BouquetAnalyzer();
 
-async function testS3() {
-    try {
-        console.log('Testing S3 connection...');
-        const response = await s3.listObjectsV2({ Bucket: bucket }).promise();
-        console.log(`✅ S3 connection successful! Found ${response.Contents.length} objects in bucket.`);
-        return response;
-    } catch (error) {
-        console.error('❌ S3 connection failed:', error.message);
-        throw error;
-    }
-}
-
-// Test S3 connection on startup
-testS3().catch(console.error);
-
-// Start server
+// Routes
 app.get('/', (req, res) => {
     res.json({ 
         message: 'Bouquet Analysis API',
-        status: 'running'
+        endpoints: {
+            'GET /bouquets': 'Get all bouquets',
+            'GET /bouquets/:id': 'Get specific bouquet',
+            'GET /bouquets/search?flowers=rose,lily': 'Search by flowers',
+            'GET /bouquets/search?colors=red,pink': 'Search by colors',
+            'GET /bouquets/search?style=romantic': 'Search by style',
+            'POST /analyze/process': 'Process all S3 images',
+            'GET /analyze/stats': 'Get analysis statistics'
+        }
     });
 });
 
-// Add test endpoint
-app.get('/test-s3', async (req, res) => {
+// Get all bouquets with optional filtering
+app.get('/bouquets', async (req, res) => {
     try {
-        const result = await testS3();
-        res.json({ 
-            success: true, 
-            message: `Found ${result.Contents.length} objects in S3 bucket`,
-            objects: result.Contents.slice(0, 5) // Show first 5 objects
+        const { page = 1, limit = 20, flowers, colors, style, occasion } = req.query;
+        
+        let query = {};
+        
+        // Build query based on filters
+        if (flowers) {
+            const flowerList = flowers.split(',').map(f => f.trim());
+            query['flowers.name'] = { $in: flowerList.map(f => new RegExp(f, 'i')) };
+        }
+        
+        if (colors) {
+            const colorList = colors.split(',').map(c => c.trim());
+            query['colors.name'] = { $in: colorList.map(c => new RegExp(c, 'i')) };
+        }
+        
+        if (style) {
+            query.style = new RegExp(style, 'i');
+        }
+        
+        if (occasion) {
+            query.occasion = new RegExp(occasion, 'i');
+        }
+
+        const bouquets = await Bouquet.find(query)
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .sort({ createdAt: -1 });
+
+        const total = await Bouquet.countDocuments(query);
+
+        res.json({
+            bouquets,
+            totalPages: Math.ceil(total / limit),
+            currentPage: page,
+            total
         });
     } catch (error) {
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get specific bouquet
+app.get('/bouquets/:id', async (req, res) => {
+    try {
+        const bouquet = await Bouquet.findById(req.params.id);
+        if (!bouquet) {
+            return res.status(404).json({ error: 'Bouquet not found' });
+        }
+        res.json(bouquet);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Search bouquets by multiple criteria
+app.get('/bouquets/search', async (req, res) => {
+    try {
+        const { q, flowers, colors, style, occasion } = req.query;
+        
+        let searchQuery = {};
+        
+        if (q) {
+            // General search across name and description
+            searchQuery.$or = [
+                { name: new RegExp(q, 'i') },
+                { 'aiAnalysis.rawResponse': new RegExp(q, 'i') }
+            ];
+        }
+
+        // Add specific filters
+        if (flowers) {
+            const flowerList = flowers.split(',').map(f => f.trim());
+            searchQuery['flowers.name'] = { $in: flowerList.map(f => new RegExp(f, 'i')) };
+        }
+        
+        if (colors) {
+            const colorList = colors.split(',').map(c => c.trim());
+            searchQuery['colors.name'] = { $in: colorList.map(c => new RegExp(c, 'i')) };
+        }
+        
+        if (style) {
+            searchQuery.style = new RegExp(style, 'i');
+        }
+        
+        if (occasion) {
+            searchQuery.occasion = new RegExp(occasion, 'i');
+        }
+
+        const bouquets = await Bouquet.find(searchQuery).sort({ 'aiAnalysis.confidence': -1 });
+        res.json(bouquets);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Trigger image processing
+app.post('/analyze/process', async (req, res) => {
+    try {
+        res.json({ message: 'Processing started. This will run in the background.', status: 'started' });
+        
+        // Run processing in background
+        analyzer.processAllImages().then(results => {
+            console.log(`Background processing complete: ${results.length} images processed`);
+        }).catch(error => {
+            console.error('Background processing error:', error);
         });
+        
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// Get analysis statistics
+app.get('/analyze/stats', async (req, res) => {
+    try {
+        const stats = await analyzer.getAnalysisStats();
+        res.json(stats);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get unique values for filtering
+app.get('/filters', async (req, res) => {
+    try {
+        const flowers = await Bouquet.distinct('flowers.name');
+        const colors = await Bouquet.distinct('colors.name');
+        const styles = await Bouquet.distinct('style');
+        const occasions = await Bouquet.distinct('occasion');
+        
+        res.json({
+            flowers: flowers.filter(f => f), // Remove null/empty values
+            colors: colors.filter(c => c),
+            styles: styles.filter(s => s),
+            occasions: occasions.filter(o => o)
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
 app.listen(8080, () => {
     console.log('Server is running on http://localhost:8080');
+    console.log('API Documentation available at http://localhost:8080');
 });

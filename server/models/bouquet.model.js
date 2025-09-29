@@ -19,7 +19,6 @@ const BouquetSchema = mongoose.Schema({
     }],
     colors: [{
         name: String,
-        hexCode: String,
         prominence: String // 'primary', 'secondary', 'accent'
     }],
     occasion: {
@@ -27,7 +26,6 @@ const BouquetSchema = mongoose.Schema({
     },
     aiAnalysis: {
         rawResponse: String,
-        confidence: Number,
         analyzedAt: {
             type: Date,
             default: Date.now

@@ -68,24 +68,23 @@ class BouquetAnalyzer {
             const prompt = `
             Analyze this bouquet image and provide detailed information in JSON format. Please identify:
 
-            1. Flowers present (with confidence scores 0-1)
-            2. Primary colors (with hex codes if possible)
-            3. Style/aesthetic (romantic, modern, rustic, elegant, etc.)
-            4. Size estimation (small, medium, large)
-            5. Suitable occasions (wedding, birthday, anniversary, etc.)
+            1. Flowers present
+            2. Primary colors
+            3. Suitable occasions (wedding, birthday, anniversary, etc.)
+
+            You can be generous with the occasions if multiple fit.
 
             Return ONLY a valid JSON object with this exact structure:
             {
-                "flowers": [{"name": "Rose", "confidence": 0.9}],
-                "colors": [{"name": "Red", "hexCode": "#FF0000", "prominence": "primary"}],
+                "flowers": [{"name": "Rose"}],
+                "colors": [{"name": "Red", "prominence": "primary"}],
                 "occasion": "wedding",
-                "confidence": 0.85,
-                "description": "Brief description of the bouquet"
+                "title": "Quick title for the bouquet"
             }
             `;
 
             const response = await this.openai.chat.completions.create({
-                model: "gpt-4-vision-preview",
+                model: "gpt-4.1-mini",
                 messages: [
                     {
                         role: "user",
@@ -116,10 +115,7 @@ class BouquetAnalyzer {
                 analysis = {
                     flowers: [],
                     colors: [],
-                    style: "unknown",
-                    size: "unknown",
                     occasion: "unknown",
-                    confidence: 0.5,
                     description: analysisText
                 };
             }
@@ -162,8 +158,6 @@ class BouquetAnalyzer {
                 s3Key: s3Object.Key,
                 flowers: analysis.flowers || [],
                 colors: analysis.colors || [],
-                style: analysis.style,
-                size: analysis.size,
                 occasion: analysis.occasion,
                 aiAnalysis: {
                     rawResponse: analysis.rawResponse,
