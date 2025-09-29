@@ -122,10 +122,6 @@ app.get('/bouquets/search', async (req, res) => {
             searchQuery['colors.name'] = { $in: colorList.map(c => new RegExp(c, 'i')) };
         }
         
-        if (style) {
-            searchQuery.style = new RegExp(style, 'i');
-        }
-        
         if (occasion) {
             searchQuery.occasion = new RegExp(occasion, 'i');
         }
@@ -155,28 +151,16 @@ app.post('/analyze/process', async (req, res) => {
 });
 
 
-// Get analysis statistics
-app.get('/analyze/stats', async (req, res) => {
-    try {
-        const stats = await analyzer.getAnalysisStats();
-        res.json(stats);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 // Get unique values for filtering
 app.get('/filters', async (req, res) => {
     try {
         const flowers = await Bouquet.distinct('flowers.name');
         const colors = await Bouquet.distinct('colors.name');
-        const styles = await Bouquet.distinct('style');
         const occasions = await Bouquet.distinct('occasion');
         
         res.json({
             flowers: flowers.filter(f => f), // Remove null/empty values
             colors: colors.filter(c => c),
-            styles: styles.filter(s => s),
             occasions: occasions.filter(o => o)
         });
     } catch (error) {

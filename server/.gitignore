@@ -1,0 +1,5 @@
+# Environment variables (SECRET KEYS!)
+.env
+
+# Dependencies
+node_modules/

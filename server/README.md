@@ -69,39 +69,12 @@ The system creates bouquet records with the following structure:
 }
 ```
 
-## 🖥️ Command Line Usage
-
-### Process All Images
-Analyze all images in your S3 bucket:
-```bash
-node analyze-bouquets.js process
-```
-
-### View Statistics
-Get analysis statistics:
-```bash
-node analyze-bouquets.js stats
-```
-
-### List S3 Images
-See all images in your bucket:
-```bash
-node analyze-bouquets.js list
-```
-
-### Test Connections
-Verify S3 and OpenAI connectivity:
-```bash
-node analyze-bouquets.js test
-```
-
 ## 🌐 API Endpoints
 
 Start the server:
 ```bash
 npm run dev
-# or
-node index.js
+
 ```
 
 Available endpoints:
@@ -136,33 +109,6 @@ GET /analyze/stats
 GET /filters
 ```
 
-## 📝 Example Usage
-
-1. **Set up your environment:**
-   ```bash
-   # Fill in your .env file with real credentials
-   nano .env
-   ```
-
-2. **Test connectivity:**
-   ```bash
-   node analyze-bouquets.js test
-   ```
-
-3. **Process your images:**
-   ```bash
-   node analyze-bouquets.js process
-   ```
-
-4. **View results:**
-   ```bash
-   node analyze-bouquets.js stats
-   ```
-
-5. **Start the API server:**
-   ```bash
-   npm run dev
-   ```
 
 6. **Query via API:**
    ```bash
