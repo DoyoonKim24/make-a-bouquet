@@ -20,9 +20,6 @@ export default function Home() {
     occasions: []
   });
 
-  useEffect(() => {
-    console.log("Selected Filters:", selectedFilters);
-  }, [selectedFilters]);
 
   return (
     <div className="p-16">

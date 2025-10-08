@@ -2,17 +2,25 @@ import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faX } from "@fortawesome/free-solid-svg-icons";
+import type { MouseEvent, ChangeEvent } from "react";
 
-export function Dropdown({ options = [], placeholder, rounded = "none", selected, setSelected }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const inputRef = useRef(null);
+interface DropdownProps {
+  options?: string[];
+  placeholder?: string;
+  rounded?: "none" | "left" | "right";
+  selected: string[];
+  setSelected: (selected: string[]) => void;
+}
 
-  const filtered = options.filter(o =>
+export function Dropdown({ options = [], placeholder, rounded = "none", selected, setSelected }: DropdownProps) {
+  const [open, setOpen] = useState<boolean>(false);
+  const [query, setQuery] = useState<string>("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = options.filter((o: string) =>
     o && o.toLowerCase().includes(query.toLowerCase())
   );
 
-  console.log("selected flowers: ", selected)
 
   return (
     <div className="relative flex flex-col w-full">
@@ -30,7 +38,7 @@ export function Dropdown({ options = [], placeholder, rounded = "none", selected
             <FontAwesomeIcon 
               icon={faX} 
               className="cursor-pointer hover:text-gray-200" 
-              onClick={(e) => {
+              onClick={(e: MouseEvent) => {
                 e.stopPropagation();
                 const newSelected = selected.filter((_, i) => i !== index);
                 setSelected(newSelected);
@@ -43,14 +51,14 @@ export function Dropdown({ options = [], placeholder, rounded = "none", selected
           type="text"
           placeholder= {placeholder}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
           className="w-full focus:outline-none px-4 py-2"
           onClick={() => setOpen(true)}
         />
         <div 
           className={`${open && "transform rotate-180"} px-4 py-2`}
-          onClick={async (e) => {
-            await e.stopPropagation();
+          onClick={(e: MouseEvent) => {
+            e.stopPropagation();
             setOpen(!open);
           }}
         >
@@ -65,7 +73,10 @@ export function Dropdown({ options = [], placeholder, rounded = "none", selected
                 key={opt}
                 onClick={() => {
                   setQuery("");
-                  setSelected(opt);
+                  if (!selected.includes(opt)) {
+                    setSelected([...selected, opt]);
+                  }
+                  setOpen(false);
                 }}
                 className="cursor-pointer hover:bg-gray-200 px-2 py-1"
               >
