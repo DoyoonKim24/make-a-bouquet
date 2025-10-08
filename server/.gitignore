@@ -1,4 +1,4 @@
-# Environment variables (SECRET KEYS!)
+# Environment variables
 .env
 
 # Dependencies

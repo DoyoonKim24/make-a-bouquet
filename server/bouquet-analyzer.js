@@ -15,9 +15,9 @@ class BouquetAnalyzer {
         });
 
         // Initialize OpenAI
-        this.openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
-        });
+        // this.openai = new OpenAI({
+        //     apiKey: process.env.OPENAI_API_KEY
+        // });
 
         this.bucketName = process.env.S3_BUCKET_NAME;
     }

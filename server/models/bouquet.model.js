@@ -22,7 +22,7 @@ const BouquetSchema = mongoose.Schema({
         prominence: String // 'primary', 'secondary', 'accent'
     }],
     occasion: {
-        type: String, // 'wedding', 'birthday', 'anniversary', etc.
+        type: [ String ],
     },
     aiAnalysis: {
         rawResponse: String,
