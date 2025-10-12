@@ -83,6 +83,45 @@ app.get('/bouquets', async (req, res) => {
     }
 });
 
+// Search bouquets by multiple criteria
+app.get('/bouquets/search', async (req, res) => {
+    try {
+        const { flowers, colors, occasions } = req.query;
+        
+        let conditions = [];
+
+        // Add specific filters - each category uses OR within itself
+        if (flowers) {
+            const flowerList = flowers.split(',').map(f => f.trim());
+            conditions.push({
+                $or: flowerList.map(f => ({ 'flowers.name': new RegExp(f, 'i') }))
+            });
+        }
+        
+        if (colors) {
+            const colorList = colors.split(',').map(c => c.trim());
+            conditions.push({
+                $or: colorList.map(c => ({ 'colors.name': new RegExp(c, 'i') }))
+            });
+        }
+
+        if (occasions) {
+            const occasionList = occasions.split(',').map(o => o.trim());
+            conditions.push({
+                $or: occasionList.map(o => ({ occasion: new RegExp(o, 'i') }))
+            });
+        }
+
+        // Combine all conditions with AND
+        const searchQuery = conditions.length > 0 ? { $and: conditions } : {};
+
+        const bouquets = await Bouquet.find(searchQuery);
+        res.json(bouquets);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Get specific bouquet
 app.get('/bouquets/:id', async (req, res) => {
     try {
@@ -91,43 +130,6 @@ app.get('/bouquets/:id', async (req, res) => {
             return res.status(404).json({ error: 'Bouquet not found' });
         }
         res.json(bouquet);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Search bouquets by multiple criteria
-app.get('/bouquets/search', async (req, res) => {
-    try {
-        const { q, flowers, colors, style, occasion } = req.query;
-        
-        let searchQuery = {};
-        
-        if (q) {
-            // General search across name and description
-            searchQuery.$or = [
-                { name: new RegExp(q, 'i') },
-                { 'aiAnalysis.rawResponse': new RegExp(q, 'i') }
-            ];
-        }
-
-        // Add specific filters
-        if (flowers) {
-            const flowerList = flowers.split(',').map(f => f.trim());
-            searchQuery['flowers.name'] = { $in: flowerList.map(f => new RegExp(f, 'i')) };
-        }
-        
-        if (colors) {
-            const colorList = colors.split(',').map(c => c.trim());
-            searchQuery['colors.name'] = { $in: colorList.map(c => new RegExp(c, 'i')) };
-        }
-        
-        if (occasion) {
-            searchQuery.occasion = new RegExp(occasion, 'i');
-        }
-
-        const bouquets = await Bouquet.find(searchQuery).sort({ 'aiAnalysis.confidence': -1 });
-        res.json(bouquets);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
