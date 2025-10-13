@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faX } from "@fortawesome/free-solid-svg-icons";
@@ -23,14 +23,14 @@ export function Dropdown({ options = [], placeholder, rounded = "none", selected
 
 
   return (
-    <div className="relative flex flex-col w-full">
+    <div className="relative flex flex-col w-full h-full">
       <div
         tabIndex={0}
         // onBlur={() => {
         //   setOpen(false)
         // }}
-        className={`${rounded === "left" && 'rounded-l-full'} ${rounded === "right" && 'rounded-r-full'} w-full flex justify-between items-center cursor-pointer 
-          ${open ? "outline outline-blue-500 outline-2" : ""}`}
+        className={`w-full h-full flex justify-between items-center cursor-pointer 
+          ${rounded === "left" && "rounded-l-full"} ${open ? "bg-hover" : ""}`}
       >
         {selected.map((item, index) => (
           <div key={index} className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 mr-1 flex items-center gap-1">
@@ -52,7 +52,7 @@ export function Dropdown({ options = [], placeholder, rounded = "none", selected
           placeholder= {placeholder}
           value={query}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-          className="w-full focus:outline-none px-4 py-2"
+          className="w-full focus:outline-none px-4 py-2 font-sweet font-medium text-base"
           onClick={() => setOpen(true)}
         />
         <div 
