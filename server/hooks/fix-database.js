@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const mongoose = require('mongoose');
-const Bouquet = require('./models/bouquet.model');
+const Bouquet = require('../models/bouquet.model');
 require('dotenv').config();
 
 // Function to convert to title case

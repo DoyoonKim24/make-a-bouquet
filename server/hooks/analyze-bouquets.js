@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const mongoose = require('mongoose');
-const BouquetAnalyzer = require('./bouquet-analyzer');
+const BouquetAnalyzer = require('../bouquet-analyzer');
 require('dotenv').config();
 
 async function main() {

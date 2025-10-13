@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const Bouquet = require('./models/bouquet.model');
-const BouquetAnalyzer = require('./bouquet-analyzer');
+const BouquetAnalyzer = require('./hooks/bouquet-analyzer');
 require('dotenv').config();
 
 const app = express();

@@ -9,9 +9,17 @@ const BouquetSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    thumbnailUrl: {
+        type: String,
+        required: false
+    },
     s3Key: {
         type: String,
         required: true
+    },
+    thumbnailS3Key: {
+        type: String,
+        required: false
     },
     flowers: [{
         name: String,
@@ -24,6 +32,10 @@ const BouquetSchema = mongoose.Schema({
     occasion: {
         type: [ String ],
     },
+    seasons: [{
+        type: String,
+        enum: ['Spring', 'Summer', 'Fall', 'Winter']
+    }],
     aiAnalysis: {
         rawResponse: String,
         analyzedAt: {

@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const OpenAI = require('openai');
 const sharp = require('sharp');
 const mongoose = require('mongoose');
-const Bouquet = require('./models/bouquet.model');
+const Bouquet = require('../models/bouquet.model');
 require('dotenv').config();
 
 class BouquetAnalyzer {
@@ -14,7 +14,6 @@ class BouquetAnalyzer {
             region: process.env.AWS_REGION
         });
 
-        // Initialize OpenAI
         // this.openai = new OpenAI({
         //     apiKey: process.env.OPENAI_API_KEY
         // });
@@ -58,6 +57,59 @@ class BouquetAnalyzer {
             Key: key,
             Expires: 3600 // URL expires in 1 hour
         });
+    }
+
+    /**
+     * Generate thumbnail key from original key
+     */
+    getThumbnailKey(originalKey) {
+        const extension = originalKey.split('.').pop();
+        const nameWithoutExt = originalKey.replace(`.${extension}`, '');
+        return `thumbnails/${nameWithoutExt}_thumb.webp`;
+    }
+
+    /**
+     * Create and upload thumbnail to S3
+     */
+    async createThumbnail(originalKey) {
+        try {
+            // Download original image from S3
+            const originalImage = await this.s3.getObject({
+                Bucket: this.bucketName,
+                Key: originalKey
+            }).promise();
+
+            // Create thumbnail using Sharp
+            const thumbnailBuffer = await sharp(originalImage.Body)
+                .resize(400, 300, {
+                    fit: 'cover',
+                    position: 'center'
+                })
+                .webp({ quality: 80 })
+                .toBuffer();
+
+            // Upload thumbnail to S3
+            const thumbnailKey = this.getThumbnailKey(originalKey);
+            await this.s3.upload({
+                Bucket: this.bucketName,
+                Key: thumbnailKey,
+                Body: thumbnailBuffer,
+                ContentType: 'image/webp',
+                ACL: 'public-read'
+            }).promise();
+
+            return thumbnailKey;
+        } catch (error) {
+            console.error('Error creating thumbnail:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Get thumbnail URL from S3 (signed URL like original images)
+     */
+    getThumbnailUrl(thumbnailKey) {
+        return `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${thumbnailKey}`;
     }
 
     /**
@@ -132,6 +184,74 @@ class BouquetAnalyzer {
     }
 
     /**
+     * Determine the seasons when all flowers in a bouquet are available
+     */
+    async determineSeasons(flowers) {
+        try {
+            if (!flowers || flowers.length === 0) {
+                return ['Spring', 'Summer', 'Fall', 'Winter']; // Default to all seasons if no flowers identified
+            }
+
+            const flowerNames = flowers.map(f => f.name).join(', ');
+            
+            const prompt = `
+            For the following flowers: ${flowerNames}
+            
+            You are in Ontario, Canada.
+
+            Determine which seasons where most of these flower (~75%) are in bloom naturally, grown in a greenhouse, or typically imported and available to buy at a store or farmer's market simultaneously. 
+            Consider their natural and commercial growing seasons as well as commonly imported flowers and when they would typically be available together.
+            
+            Return ONLY a JSON array of season names when ALL flowers would be available together, choosing from: ["Spring", "Summer", "Fall", "Winter"]
+            
+            Example response format: ["Spring", "Summer"]
+
+            If some flowers are available year-round (like roses from greenhouses), return ["Spring", "Summer", "Fall", "Winter"].
+            `;
+
+            const response = await this.openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                max_tokens: 200
+            });
+
+            const analysisText = response.choices[0].message.content.trim();
+            
+            // Try to parse JSON from the response
+            let seasons;
+            try {
+                // Clean the response and parse JSON
+                const jsonMatch = analysisText.match(/\[(.*?)\]/s);
+                const cleanJson = jsonMatch ? jsonMatch[0] : analysisText;
+                seasons = JSON.parse(cleanJson);
+                
+                // Validate that all items are valid seasons
+                const validSeasons = ['Spring', 'Summer', 'Fall', 'Winter'];
+                seasons = seasons.filter(season => validSeasons.includes(season));
+                
+                if (seasons.length === 0) {
+                    seasons = ['Spring', 'Summer', 'Fall', 'Winter']; // Default fallback
+                }
+            } catch (parseError) {
+                console.warn('Failed to parse season response, using default:', parseError);
+                seasons = ['Spring', 'Summer', 'Fall', 'Winter']; // Default fallback
+            }
+
+            return seasons;
+
+        } catch (error) {
+            console.error('Error determining seasons:', error);
+            return ['Spring', 'Summer', 'Fall', 'Winter']; // Default fallback
+        }
+    }
+    
+
+    /**
      * Process a single image
      */
     async processImage(s3Object) {
@@ -148,17 +268,28 @@ class BouquetAnalyzer {
             // Get image URL
             const imageUrl = this.getImageUrl(s3Object.Key);
 
+            // Create thumbnail
+            console.log(`Creating thumbnail for: ${s3Object.Key}`);
+            const thumbnailKey = await this.createThumbnail(s3Object.Key);
+            const thumbnailUrl = thumbnailKey ? this.getThumbnailUrl(thumbnailKey) : null;
+
             // Analyze the image
             const analysis = await this.analyzeBouquet(imageUrl);
+
+            // Determine seasons when all flowers are available
+            const seasons = await this.determineSeasons(analysis.flowers);
 
             // Create bouquet record
             const bouquet = new Bouquet({
                 name: this.generateBouquetName(s3Object.Key),
                 imageUrl: imageUrl,
+                thumbnailUrl: thumbnailUrl,
                 s3Key: s3Object.Key,
+                thumbnailS3Key: thumbnailKey,
                 flowers: analysis.flowers || [],
                 colors: analysis.colors || [],
                 occasion: analysis.occasion,
+                seasons: seasons,
                 aiAnalysis: {
                     rawResponse: analysis.rawResponse,
                     confidence: analysis.confidence || 0.5,
@@ -266,11 +397,18 @@ class BouquetAnalyzer {
                 { $sort: { count: -1 } }
             ]);
 
+            const seasonStats = await Bouquet.aggregate([
+                { $unwind: '$seasons' },
+                { $group: { _id: '$seasons', count: { $sum: 1 } } },
+                { $sort: { count: -1 } }
+            ]);
+
             return {
                 totalBouquets,
                 topFlowers: flowerStats,
                 topColors: colorStats,
-                styleDistribution: styleStats
+                styleDistribution: styleStats,
+                seasonDistribution: seasonStats
             };
         } catch (error) {
             console.error('Error getting stats:', error);
