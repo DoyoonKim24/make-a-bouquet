@@ -1,6 +1,7 @@
-import { use, useEffect, useState } from "react";
+import { useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faChevronLeft } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { Dropdown } from "../components/Dropdown";
 import { useFilters } from "../hooks/useFilters";
 import flower1 from '../../public/images/flower1.png';
@@ -29,9 +30,10 @@ export default function Home() {
     seasons: []
   });
 
-  const [bouquets, setBouquets] = useState([]);
+  const [bouquets, setBouquets] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [focusedBouquet, setFocusedBouquet] = useState(null);
+  const [focusedBouquet, setFocusedBouquet] = useState<any | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   const handleCreateBouquet = async () => {
     setSearchLoading(true);
@@ -66,6 +68,24 @@ export default function Home() {
 
   const handleBouquetClick = (bouquet: any) => {
     setFocusedBouquet(bouquet);
+  }
+
+  const handleNextBouquet = () => {
+    if (!focusedBouquet || bouquets.length === 0) return;
+    
+    setImageLoading(true);
+    const currentIndex = bouquets.findIndex((bouquet: any) => bouquet._id === focusedBouquet._id);
+    const nextIndex = (currentIndex + 1) % bouquets.length; // Loop back to first if at end
+    setFocusedBouquet(bouquets[nextIndex]);
+  }
+
+  const handlePrevBouquet = () => {
+    if (!focusedBouquet || bouquets.length === 0) return;
+    
+    setImageLoading(true);
+    const currentIndex = bouquets.findIndex((bouquet: any) => bouquet._id === focusedBouquet._id);
+    const prevIndex = currentIndex === 0 ? bouquets.length - 1 : currentIndex - 1; // Loop to last if at beginning
+    setFocusedBouquet(bouquets[prevIndex]);
   }
 
 
@@ -141,7 +161,9 @@ export default function Home() {
             <h2 className="text-xl font-bold">Found {bouquets.length} bouquets:</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {bouquets.map((bouquet: any) => (
-                <div onClick={() => handleBouquetClick(bouquet)} key={bouquet._id} className="border rounded-lg p-4">
+                <div onClick={() => handleBouquetClick(bouquet)} key={bouquet._id} 
+                  className="border-wine border-1 rounded-lg p-4 bg-[#FFFDFD] hover:bg-[#FFEDED] cursor-pointer transition"
+                >
                   {(bouquet.thumbnailUrl || bouquet.imageUrl) && (
                     <img 
                       src={bouquet.thumbnailUrl || bouquet.imageUrl} 
@@ -151,9 +173,6 @@ export default function Home() {
                     />
                   )}
                   <p><strong>Flowers:</strong> {bouquet.flowers?.map((f: any) => f.name).join(', ')}</p>
-                  <p><strong>Colors:</strong> {bouquet.colors?.map((c: any) => c.name).join(', ')}</p>
-                  <p><strong>Occasion:</strong> {bouquet.occasion?.join(', ')}</p>
-                  <p><strong>Seasons:</strong> {bouquet.seasons?.join(', ')}</p>
                 </div>
               ))}
             </div>
@@ -162,40 +181,67 @@ export default function Home() {
       </div>
       {focusedBouquet && (
         <>
-          <div className="fixed w-[30%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg border rounded-lg p-4 z-20">
-            <img 
-              src={focusedBouquet.imageUrl} 
-              alt="Bouquet" 
-              className=" w-full object-cover rounded mb-2"
-              loading="lazy"
-            />
-            <p><strong>Flowers:</strong> {focusedBouquet.flowers?.map((f: any) => f.name).join(', ')}</p>
-            <p><strong>Colors:</strong> {focusedBouquet.colors?.map((c: any) => c.name).join(', ')}</p>
-            <p><strong>Occasion:</strong> {focusedBouquet.occasion?.join(', ')}</p>
-            <p><strong>Seasons:</strong> {focusedBouquet.seasons?.join(', ')}</p>
+          <div 
+            className="fixed inset-0 bg-black/20 z-20" 
+            onClick={() => setFocusedBouquet(null)}
+          />
+          <div className="fixed inset-0 flex justify-center items-center gap-4 z-30 pointer-events-none">
+            <div 
+              className="cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 flex items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
+              onClick={handlePrevBouquet}
+            >
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </div>
+            <div className="w-[35%] bg-white shadow-lg border-2 border-wine rounded-lg p-4 pointer-events-auto">
+              <div className="relative w-full h-full mb-2" >
+                {imageLoading && (
+                  <div className="absolute inset-0 bg-gray-300 animate-pulse rounded flex items-center justify-center">
+                    <div className="text-gray-500 text-sm">Loading...</div>
+                  </div>
+                )}
+                <img 
+                  src={focusedBouquet.imageUrl} 
+                  alt="Bouquet" 
+                  className={`w-full max-h-[70vh] object-cover rounded ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
+                  style={{ aspectRatio: 'clamp(3/8, auto, 8/3)' }}
+                  onLoad={() => setImageLoading(false)}
+                  onError={() => setImageLoading(false)}
+                  loading="lazy"
+                />
+              </div>
+              <p><strong>Flowers:</strong> {focusedBouquet.flowers?.map((f: any) => f.name).join(', ')}</p>
+              <p><strong>Colors:</strong> {focusedBouquet.colors?.map((c: any) => c.name).join(', ')}</p>
+              <p><strong>Occasion:</strong> {focusedBouquet.occasion?.join(', ')}</p>
+              <p><strong>Seasons:</strong> {focusedBouquet.seasons?.join(', ')}</p>
+            </div>
+            <div 
+              className="cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 flex items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
+              onClick={handleNextBouquet}
+            >
+              <FontAwesomeIcon icon={faChevronRight} />
+            </div>
           </div>
-          <div className="w-screen h-screen fixed top-0 left-0 bg-black/20 z-10" onClick={() => setFocusedBouquet(null)} />
         </>
       )}
       <img 
         src={flower1} 
         alt="flower1" 
-        className="fixed w-auto h-[70%] left-0 bottom-0" 
+        className="fixed w-auto h-[70%] left-0 bottom-0 pointer-events-none select-none" 
       />
       <img 
         src={flower2} 
         alt="flower2" 
-        className="fixed w-auto h-[30%] right-1/2 -bottom-8" 
+        className="fixed w-auto h-[30%] right-1/2 -bottom-8 pointer-events-none select-none" 
       />
       <img 
         src={flower3} 
         alt="flower3" 
-        className="fixed w-auto h-[60%] right-8 bottom-0" 
+        className="fixed w-auto h-[60%] right-8 bottom-0 pointer-events-none select-none" 
       />
       <img 
         src={flower4} 
         alt="flower4" 
-        className="fixed w-auto h-[20%] right-0 top-1/6" 
+        className="fixed w-auto h-[20%] right-0 top-1/6 pointer-events-none select-none" 
       />
     </div>
   );

@@ -32,16 +32,16 @@ export function Dropdown({ options = [], placeholder, rounded = "none", imageUse
         setOpen(false);
       }
     };
+    if (open && inputRef.current) {
+      inputRef.current.focus();
+    }
 
     if (open) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-
-    if (open && inputRef.current) {
-      inputRef.current.focus();
-    }
   }, [open]);
+  
 
   const filtered = options.filter((o) => {
     const label = imageUsed ? (o as DropdownOption).name : (o as string);
@@ -73,7 +73,7 @@ export function Dropdown({ options = [], placeholder, rounded = "none", imageUse
                   {item}
                   <FontAwesomeIcon 
                     icon={faX} 
-                    className="cursor-pointer hover:text-gray-200" 
+                    className="cursor-pointer hover:text-black" 
                     onClick={(e: MouseEvent) => {
                       e.stopPropagation();
                       const newSelected = selected.filter((_, i) => i !== index);
