@@ -31,70 +31,21 @@ body {
     font-weight: 300;
     color: var(--color-wine);
   }
-  h3 {
-    font-size: 32px;
-    font-family: ivypresto-display, serif;
-    font-weight: 300;
-    color: var(--color-wine);
-  }
-  h4 {
-    font-size: 24px;
-    font-family: ivypresto-display, serif;
-    font-weight: 300;
-    color: var(--color-wine);
-  }
-  h5 {
-    font-size: 20px;
-    font-family: sweet-sans-pro, sans-serif;
-    font-weight: 500;
-  }
-  h6 {
-    font-size: 18px;
-    font-family: sweet-sans-pro, sans-serif;
-    font-weight: 500;
-    line-height: 30px;
-  }
   p {
     font-size: 16px;
     font-family: sweet-sans-pro, sans-serif;
     font-weight: 500;
   }
 
-  li {
-    font-size: 18px;
-    font-family: basic-sans, sans-serif;
-    font-weight: 400;
-  }
-
   @media (max-width: 40rem) {
     h1 {
-      font-size: 30px;
+      font-size: 40px;
     }
     h2 {
       font-size: 34px;
     }
-    h3 {
-      font-size: 30px;
-      line-height: 36px;
-    }
-    h4 {
-      font-size: 26px;
-    }
-    h5 {
-      font-size: 23px;
-    }
-    h6 {
-      font-size: 20px;
-      line-height: 25px;
-    }
     p {
-      font-size: 16px;
-    }
-    ps {
       font-size: 12px;
-    }
-    li {
-      font-size: 16px;
     }
   }
 }

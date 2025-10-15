@@ -90,11 +90,13 @@ export default function Home() {
 
 
   return (
-    <div className="w-full h-screen flex flex-col justify-start items-center pt-40">
-      <div className="max-w-[1056px] flex flex-col justify-center z-10 gap-2">
+    <div className="w-full h-screen flex flex-col justify-start items-center pt-40 px-4 sm:px-8 lg:px-16">
+      <div className="max-w-[1056px] w-full flex flex-col justify-center z-10 gap-2">
         <h1> Make-a-Bouquet </h1>
         <p className="text-lg text-cocoa mb-14"> Create your own custom bouquet by selecting your favorite flowers, colors, occasions, and seasons. </p>
-        <div className="flex border border-wine border-2 rounded-full bg-white">
+        
+        {/* Desktop search bar */}
+        <div className="hidden md:flex border border-wine border-2 rounded-full bg-white w-full min-w-0">
           <div className="flex flex-1 min-w-0 items-center">
             <div className="flex-1 min-w-0">
               <Dropdown
@@ -154,15 +156,74 @@ export default function Home() {
             {searchLoading ? 'Searching...' : 'Create Bouquet'}
           </button>
         </div>
+
+        {/* Mobile search bar */}
+        <div className="md:hidden border border-wine border-2 rounded-lg bg-white w-full min-w-0 p-4 flex flex-col gap-4">
+          <div className="flex flex-col flex-1 sm:grid sm:grid-cols-2 gap-2 min-w-0 w-full items-center">
+            <div className="flex-1 min-w-0 border-gray-300 border-1 rounded-lg w-full">
+              <Dropdown
+                placeholder="All Flowers"
+                options={flowerOptions}
+                rounded="left"
+                imageUsed={true}
+                selected={selectedFilters.flowers}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  flowers: Array.isArray(value) ? value : (prev.flowers.includes(value) ? prev.flowers : [...prev.flowers, value])
+                }))}
+              />
+            </div>
+            <div className="flex-1 min-w-0 border-gray-300 border-1 rounded-lg w-full">
+              <Dropdown
+                placeholder="All Colours"
+                options={colorOptions}
+                selected={selectedFilters.colors}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  colors: Array.isArray(value) ? value : (prev.colors.includes(value) ? prev.colors : [...prev.colors, value])
+                }))}
+              />
+            </div>
+            <div className="flex-1 min-w-0 border-gray-300 border-1 rounded-lg w-full">
+              <Dropdown
+                placeholder="All Occasions"
+                options={occasionOptions}
+                selected={selectedFilters.occasions}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  occasions: Array.isArray(value) ? value : (prev.occasions.includes(value) ? prev.occasions : [...prev.occasions, value])
+                }))}
+              />
+            </div>
+            <div className="flex-1 min-w-0 border-gray-300 border-1 rounded-lg w-full">
+              <Dropdown
+                placeholder="All Seasons"
+                options={seasonOptions}
+                selected={selectedFilters.seasons}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  seasons: Array.isArray(value) ? value : (prev.seasons.includes(value) ? prev.seasons : [...prev.seasons, value])
+                }))}
+              />
+            </div>
+          </div>
+          <button 
+            className="bg-[#AF3838] font-sweet font-semibold text-base text-white border-wine border-2 rounded-full px-6 py-3 w-full whitespace-nowrap flex-shrink-0 disabled:opacity-50"
+            onClick={handleCreateBouquet}
+            disabled={searchLoading}
+          >
+            {searchLoading ? 'Searching...' : 'Create Bouquet'}
+          </button>
+        </div>
         
         {/* Display results */}
         {bouquets.length > 0 && (
           <div className="mt-8 flex flex-col gap-4">
-            <h2 className="text-xl font-bold">Found {bouquets.length} bouquets:</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h2 className="text-xl font-semibold">Found {bouquets.length} bouquets:</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               {bouquets.map((bouquet: any) => (
                 <div onClick={() => handleBouquetClick(bouquet)} key={bouquet._id} 
-                  className="border-wine border-1 rounded-lg p-4 bg-[#FFFDFD] hover:bg-[#FFEDED] cursor-pointer transition"
+                  className="border-wine border-1 rounded-lg p-2 md:p-4 bg-[#FFFDFD] hover:bg-[#FFEDED] cursor-pointer transition"
                 >
                   {(bouquet.thumbnailUrl || bouquet.imageUrl) && (
                     <img 
@@ -185,14 +246,14 @@ export default function Home() {
             className="fixed inset-0 bg-black/20 z-20" 
             onClick={() => setFocusedBouquet(null)}
           />
-          <div className="fixed inset-0 flex justify-center items-center gap-4 z-30 pointer-events-none">
+          <div className="fixed inset-0 flex flex-col sm:flex-row justify-center items-center gap-4 z-30 pointer-events-none">
             <div 
-              className="cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 flex items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
+              className="hidden sm:flex cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
               onClick={handlePrevBouquet}
             >
               <FontAwesomeIcon icon={faChevronLeft} />
             </div>
-            <div className="w-[35%] bg-white shadow-lg border-2 border-wine rounded-lg p-4 pointer-events-auto">
+            <div className="w-[80%] sm:w-[50%] lg:w-[35%] flex flex-col bg-white shadow-lg border-2 border-wine rounded-lg p-4 pointer-events-auto">
               <div className="relative w-full h-full mb-2" >
                 {imageLoading && (
                   <div className="absolute inset-0 bg-gray-300 animate-pulse rounded flex items-center justify-center">
@@ -215,10 +276,24 @@ export default function Home() {
               <p><strong>Seasons:</strong> {focusedBouquet.seasons?.join(', ')}</p>
             </div>
             <div 
-              className="cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 flex items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
+              className="hidden sm:flex cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 flex items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
               onClick={handleNextBouquet}
             >
               <FontAwesomeIcon icon={faChevronRight} />
+            </div>
+            <div className="flex sm:hidden gap-8">
+              <div 
+                className="flex cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 flex items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
+                onClick={handleNextBouquet}
+              >
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </div>
+              <div 
+                className="flex cursor-pointer bg-white hover:bg-gray-100 p-2 rounded-full w-14 h-14 flex items-center justify-center border-2 border-wine text-wine pointer-events-auto" 
+                onClick={handleNextBouquet}
+              >
+                <FontAwesomeIcon icon={faChevronRight} />
+              </div>
             </div>
           </div>
         </>

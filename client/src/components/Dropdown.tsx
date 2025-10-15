@@ -49,12 +49,12 @@ export function Dropdown({ options = [], placeholder, rounded = "none", imageUse
   });
 
   return (
-    <div ref={dropdownRef} className="relative flex flex-col w-full h-full">
+    <div ref={dropdownRef} className="relative flex flex-col h-full">
       <div
         tabIndex={0}
         onClick={() => setOpen(true)}
-        className={`w-full h-18 flex justify-between items-center cursor-pointer px-4 overflow-hidden
-          ${rounded === "left" && "rounded-l-full"} ${open ? "bg-hover" : ""}`}
+        className={`h-14 md:h-18 flex justify-between items-center cursor-pointer py-2 pl-4 pr-2 overflow-hidden
+          ${rounded === "left" && "md:rounded-l-full"} ${open && "bg-hover"}`}
       >
         <div className="flex items-start gap-1 overflow-y-auto max-h-18 py-2 flex-1">
           {open || selected.length === 0 ? (
@@ -97,7 +97,7 @@ export function Dropdown({ options = [], placeholder, rounded = "none", imageUse
       </div>
       {open && (
         imageUsed ? (
-          <div className="absolute top-full border-2 border-wine rounded-lg bg-white z-10 mt-2 w-[30vw] overflow-hidden">
+          <div className="absolute top-full border-2 border-wine rounded-lg bg-white z-10 mt-2 md:w-[30vw] md:min-w-[400px] overflow-hidden">
             {selected.length > 0 && (
               <>
                 <div className="flex flex-wrap p-2 gap-2 bg-blush">
@@ -120,7 +120,7 @@ export function Dropdown({ options = [], placeholder, rounded = "none", imageUse
                 <hr className="border-wine border-1 mb-2"/>
               </>
             )}
-            <div className="overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-h-160">
+            <div className="overflow-y-auto grid grid-cols-2 md:grid-cols-3 max-h-160">
               {filtered.map((opt) => {
                 const option = opt as DropdownOption;
                 const isSelected = selected.includes(option.name);
@@ -149,7 +149,7 @@ export function Dropdown({ options = [], placeholder, rounded = "none", imageUse
             </div>
           </div>
         ) : (
-          <div className="absolute top-full border-2 border-wine rounded-lg bg-white z-10 mt-2 w-[16vw] overflow-hidden">
+          <div className="absolute top-full border-2 border-wine rounded-lg bg-white z-10 mt-2 w-full md:w-[16vw] md:min-w-[200px] overflow-hidden">
             {selected.length > 0 && (
               <>
                 <div className="flex flex-wrap p-2 gap-2 bg-blush">
