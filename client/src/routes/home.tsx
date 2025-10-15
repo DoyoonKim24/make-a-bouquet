@@ -4,10 +4,10 @@ import { faChevronLeft } from '@fortawesome/free-solid-svg-icons'
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { Dropdown } from "../components/Dropdown";
 import { useFilters } from "../hooks/useFilters";
-import flower1 from '../../public/images/flower1.png';
-import flower2 from '../../public/images/flower2.png';
-import flower3 from '../../public/images/flower3.png';
-import flower4 from '../../public/images/flower4.png';
+import flower1 from '../images/flower1.png';
+import flower2 from '../images/flower2.png';
+import flower3 from '../images/flower3.png';
+import flower4 from '../images/flower4.png';
 
 export default function Home() {
   const { filters } = useFilters();
