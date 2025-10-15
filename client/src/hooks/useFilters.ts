@@ -27,7 +27,8 @@ export function useFilters(): UseFiltersReturn {
   const fetchFilters = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8080/filters');
+      const API_BASE_URL = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${API_BASE_URL}/filters`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -54,7 +54,8 @@ export default function Home() {
         params.append('seasons', selectedFilters.seasons.join(','));
       }
 
-      const response = await fetch(`http://localhost:8080/bouquets/search?${params}`);
+      const API_BASE_URL = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${API_BASE_URL}/bouquets/search?${params}`);
       const data = await response.json();
       
       setBouquets(data);
