@@ -9,7 +9,9 @@ import flower3 from '../../public/images/flower3.png';
 import flower4 from '../../public/images/flower4.png';
 
 export default function Home() {
-  const { filters, loading, error } = useFilters();
+  const { filters } = useFilters();
+  
+  // Transform flower objects to dropdown options
   const flowerOptions = filters ? filters.flowers : [];
   const colorOptions = filters ? filters.colors : [];
   const occasionOptions = filters ? filters.occasions : [];
@@ -72,48 +74,57 @@ export default function Home() {
       <div className="max-w-[1056px] flex flex-col justify-center z-10 gap-2">
         <h1> Make-a-Bouquet </h1>
         <p className="text-lg text-cocoa mb-14"> Create your own custom bouquet by selecting your favorite flowers, colors, occasions, and seasons. </p>
-        <div className="flex gap-4 border border-wine border-2 rounded-full bg-white">
-          <div className="flex w-full items-center">
-            <Dropdown
-              placeholder="Flower(s)"
-              options={flowerOptions}
-              rounded="left"
-              selected={selectedFilters.flowers}
-              setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
-                ...prev, 
-                flowers: Array.isArray(value) ? value : (prev.flowers.includes(value) ? prev.flowers : [...prev.flowers, value])
-              }))}
-            />
+        <div className="flex border border-wine border-2 rounded-full bg-white">
+          <div className="flex flex-1 min-w-0 items-center">
+            <div className="flex-1 min-w-0">
+              <Dropdown
+                placeholder="All Flowers"
+                options={flowerOptions}
+                rounded="left"
+                imageUsed={true}
+                selected={selectedFilters.flowers}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  flowers: Array.isArray(value) ? value : (prev.flowers.includes(value) ? prev.flowers : [...prev.flowers, value])
+                }))}
+              />
+            </div>
             <hr className="border border-cocoa h-6" />
-            <Dropdown
-              placeholder="Colour(s)"
-              options={colorOptions}
-              selected={selectedFilters.colors}
-              setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
-                ...prev, 
-                colors: Array.isArray(value) ? value : (prev.colors.includes(value) ? prev.colors : [...prev.colors, value])
-              }))}
-            />
+            <div className="flex-1 min-w-0">
+              <Dropdown
+                placeholder="All Colours"
+                options={colorOptions}
+                selected={selectedFilters.colors}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  colors: Array.isArray(value) ? value : (prev.colors.includes(value) ? prev.colors : [...prev.colors, value])
+                }))}
+              />
+            </div>
             <hr className="border border-cocoa h-6" />
-            <Dropdown
-              placeholder="Occasion(s)"
-              options={occasionOptions}
-              selected={selectedFilters.occasions}
-              setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
-                ...prev, 
-                occasions: Array.isArray(value) ? value : (prev.occasions.includes(value) ? prev.occasions : [...prev.occasions, value])
-              }))}
-            /> 
+            <div className="flex-1 min-w-0">
+              <Dropdown
+                placeholder="All Occasions"
+                options={occasionOptions}
+                selected={selectedFilters.occasions}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  occasions: Array.isArray(value) ? value : (prev.occasions.includes(value) ? prev.occasions : [...prev.occasions, value])
+                }))}
+              />
+            </div>
             <hr className="border border-cocoa h-6" />
-            <Dropdown
-              placeholder="Season(s)"
-              options={seasonOptions}
-              selected={selectedFilters.seasons}
-              setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
-                ...prev, 
-                seasons: Array.isArray(value) ? value : (prev.seasons.includes(value) ? prev.seasons : [...prev.seasons, value])
-              }))}
-            />
+            <div className="flex-1 min-w-0">
+              <Dropdown
+                placeholder="All Seasons"
+                options={seasonOptions}
+                selected={selectedFilters.seasons}
+                setSelected={(value : string | string[]) => setSelectedFilters(prev => ({ 
+                  ...prev, 
+                  seasons: Array.isArray(value) ? value : (prev.seasons.includes(value) ? prev.seasons : [...prev.seasons, value])
+                }))}
+              />
+            </div>
           </div>
           <button 
             className="bg-[#AF3838] font-sweet font-semibold text-base text-white border-wine border-2 rounded-full px-6 py-3 m-2 whitespace-nowrap flex-shrink-0 disabled:opacity-50"

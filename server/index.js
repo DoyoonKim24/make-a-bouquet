@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const Bouquet = require('./models/bouquet.model');
-const BouquetAnalyzer = require('./hooks/bouquet-analyzer');
+const Flower = require('./models/flower.model');
+const BouquetAnalyzer = require('./scripts/bouquet-analyzer');
+const { upload } = require('./config/s3');
 require('dotenv').config();
 
 const app = express();
@@ -152,16 +154,31 @@ app.post('/analyze/process', async (req, res) => {
     }
 });
 
+// === FLOWER ROUTES ===
+
+// Get all flowers
+app.get('/flowers', async (req, res) => {
+    try {
+        const flowers = await Flower.find().sort({ name: 1 });
+        res.json(flowers);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 // Get unique values for filtering
 app.get('/filters', async (req, res) => {
     try {
-        const flowers = await Bouquet.distinct('flowers.name');
+        // Get flowers with images from the Flower collection
+        const flowers = await Flower.find({});
+        
+        // Get colors and occasions from bouquets (as before)
         const colors = await Bouquet.distinct('colors.name');
         const occasions = await Bouquet.distinct('occasion');
         
         res.json({
-            flowers: flowers.filter(f => f), // Remove null/empty values
+            flowers: flowers.filter(f => f),
             colors: colors.filter(c => c),
             occasions: occasions.filter(o => o)
         });

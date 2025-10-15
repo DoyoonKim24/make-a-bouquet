@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 
+interface FlowerOption {
+  _id: string;
+  name: string;
+  imageUrl: string;
+}
+
 interface Filters {
-  flowers: string[];
+  flowers: FlowerOption[];
   colors: string[];
   occasions: string[];
 }
@@ -28,6 +34,7 @@ export function useFilters(): UseFiltersReturn {
       }
       
       const data: Filters = await response.json();
+      console.log('Fetched filters:', data);
       setFilters(data);
       setError(null);
     } catch (err) {

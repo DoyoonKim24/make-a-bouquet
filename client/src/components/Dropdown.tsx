@@ -4,59 +4,89 @@ import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import type { MouseEvent, ChangeEvent } from "react";
 
+interface DropdownOption {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+}
+
 interface DropdownProps {
-  options?: string[];
+  options?: (string | DropdownOption)[];
   placeholder?: string;
-  rounded?: "none" | "left" | "right";
+  rounded?: "none" | "left";
+  imageUsed?: boolean;
   selected: string[];
   setSelected: (selected: string[]) => void;
 }
 
-export function Dropdown({ options = [], placeholder, rounded = "none", selected, setSelected }: DropdownProps) {
+export function Dropdown({ options = [], placeholder, rounded = "none", imageUsed = false, selected, setSelected }: DropdownProps) {
   const [open, setOpen] = useState<boolean>(false);
   const [query, setQuery] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filtered = options.filter((o: string) =>
-    o && o.toLowerCase().includes(query.toLowerCase())
-  );
+  // Auto-focus input when dropdown opens
+  useEffect(() => {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
 
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    if (open && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [open]);
+
+  const filtered = options.filter((o) => {
+    const label = imageUsed ? (o as DropdownOption).name : (o as string);
+    return label && label.toLowerCase().includes(query.toLowerCase());
+  });
 
   return (
-    <div className="relative flex flex-col w-full h-full">
+    <div ref={dropdownRef} className="relative flex flex-col w-full h-full">
       <div
         tabIndex={0}
-        // onBlur={() => {
-        //   setOpen(false)
-        // }}
-        className={`w-full h-full flex justify-between items-center cursor-pointer 
+        onClick={() => setOpen(true)}
+        className={`w-full h-18 flex justify-between items-center cursor-pointer px-4 overflow-hidden
           ${rounded === "left" && "rounded-l-full"} ${open ? "bg-hover" : ""}`}
       >
-        {selected.map((item, index) => (
-          <div key={index} className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 mr-1 flex items-center gap-1">
-            {item}
-            <FontAwesomeIcon 
-              icon={faX} 
-              className="cursor-pointer hover:text-gray-200" 
-              onClick={(e: MouseEvent) => {
-                e.stopPropagation();
-                const newSelected = selected.filter((_, i) => i !== index);
-                setSelected(newSelected);
-              }}
+        <div className="flex items-start gap-1 overflow-y-auto max-h-18 py-2 flex-1">
+          {open || selected.length === 0 ? (
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={selected.length === 0 ? placeholder : "Search..."}
+              value={query}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+              className="focus:outline-none flex-1 min-w-0 py-2 font-sweet font-medium text-base"
             />
-          </div>
-        ))}
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder= {placeholder}
-          value={query}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-          className="w-full focus:outline-none px-4 py-2 font-sweet font-medium text-base"
-          onClick={() => setOpen(true)}
-        />
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {selected.map((item, index) => (
+                <div key={index} className="bg-green text-charcoal text-xs font-sweet font-semibold rounded-full px-2 py-1 flex items-center gap-1 flex-shrink-0">
+                  {item}
+                  <FontAwesomeIcon 
+                    icon={faX} 
+                    className="cursor-pointer hover:text-gray-200" 
+                    onClick={(e: MouseEvent) => {
+                      e.stopPropagation();
+                      const newSelected = selected.filter((_, i) => i !== index);
+                      setSelected(newSelected);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div 
-          className={`${open && "transform rotate-180"} px-4 py-2`}
+          className={`${open && "transform rotate-180"} px-2 py-2`}
           onClick={(e: MouseEvent) => {
             e.stopPropagation();
             setOpen(!open);
@@ -66,25 +96,110 @@ export function Dropdown({ options = [], placeholder, rounded = "none", selected
         </div>
       </div>
       {open && (
-        <div className="absolute top-full border border-gray-300 rounded bg-white z-10 mt-2">
-          <ul>
-            {filtered.map((opt) => (
-              <li
-                key={opt}
-                onClick={() => {
-                  setQuery("");
-                  if (!selected.includes(opt)) {
-                    setSelected([...selected, opt]);
-                  }
-                  setOpen(false);
-                }}
-                className="cursor-pointer hover:bg-gray-200 px-2 py-1"
-              >
-                {opt}
-              </li>
-            ))}
-          </ul>
-        </div>
+        imageUsed ? (
+          <div className="absolute top-full border-2 border-wine rounded-lg bg-white z-10 mt-2 w-[30vw] overflow-hidden">
+            {selected.length > 0 && (
+              <>
+                <div className="flex flex-wrap p-2 gap-2 bg-blush">
+                  <p className="font-semibold">Selected:</p>
+                  {selected.map((item, index) => (
+                    <div key={index} className="bg-green text-charcoal text-xs font-sweet font-semibold rounded-full px-2 py-1 flex items-center gap-1 flex-shrink-0">
+                      {item}
+                      <FontAwesomeIcon 
+                        icon={faX} 
+                        className="cursor-pointer hover:text-gray-200" 
+                        onClick={(e: MouseEvent) => {
+                          e.stopPropagation();
+                          const newSelected = selected.filter((_, i) => i !== index);
+                          setSelected(newSelected);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <hr className="border-wine border-1 mb-2"/>
+              </>
+            )}
+            <div className="overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-h-160">
+              {filtered.map((opt) => {
+                const option = opt as DropdownOption;
+                const isSelected = selected.includes(option.name);
+                return (
+                  <div
+                    key={option._id}
+                    onClick={() => {
+                      setQuery("");
+                      if (!isSelected) {
+                        setSelected([...selected, option.name]);
+                      } else {
+                        setSelected(selected.filter(item => item !== option.name));
+                      }
+                    }}
+                    className={`cursor-pointer px-3 py-3 gap-1 flex flex-col border-gray-100 border-[0.25px] text-wrap break-words ${
+                      isSelected
+                        ? 'bg-green hover:bg-green/80'
+                        : 'hover:bg-hover'
+                    }`}
+                  >
+                    <img src={option.imageUrl} alt={option.name} className="inline-block w-full h-auto mr-2 object-cover rounded" />
+                    <p className="font-semibold">{option.name}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="absolute top-full border-2 border-wine rounded-lg bg-white z-10 mt-2 w-[16vw] overflow-hidden">
+            {selected.length > 0 && (
+              <>
+                <div className="flex flex-wrap p-2 gap-2 bg-blush">
+                  <p className="font-semibold">Selected:</p>
+                  {selected.map((item, index) => (
+                    <div key={index} className="bg-green text-charcoal text-xs font-sweet font-semibold rounded-full px-2 py-1 flex items-center gap-1 flex-shrink-0">
+                      {item}
+                      <FontAwesomeIcon 
+                        icon={faX} 
+                        className="cursor-pointer hover:text-gray-200" 
+                        onClick={(e: MouseEvent) => {
+                          e.stopPropagation();
+                          const newSelected = selected.filter((_, i) => i !== index);
+                          setSelected(newSelected);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <hr className="border-wine border-1 mb-2"/>
+              </>
+            )}
+            <div className="overflow-y-auto flex flex-col max-h-160">
+              {filtered.map((opt) => {
+                const option = opt as string;
+                const isSelected = selected.includes(option);
+                return (
+                  <div
+                    key={option}
+                    onClick={() => {
+                      setQuery("");
+                      if (!isSelected) {
+                        setSelected([...selected, option]);
+                      } else {
+                        setSelected(selected.filter(item => item !== option));
+                      }
+                    }}
+                    className={`cursor-pointer px-3 py-2 gap-1 flex flex-col border-gray-100 border-[0.25px] text-wrap break-words ${
+                      isSelected
+                        ? 'bg-green hover:bg-green/80'
+                        : 'hover:bg-hover'
+                    }`}
+                  >
+                    <p className="font-semibold">{option}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )
       )}
     </div>
   );
