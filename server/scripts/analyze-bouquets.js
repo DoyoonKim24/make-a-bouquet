@@ -6,12 +6,10 @@ require('dotenv').config();
 
 async function main() {
     try {
-        console.log('🌸 Bouquet Image Analyzer CLI 🌸\n');
-
         // Connect to MongoDB
         console.log('Connecting to MongoDB...');
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://kimdoyo424_db_user:JfTfdCXiaw037MEY@bouquet-db.1ht2jja.mongodb.net/?retryWrites=true&w=majority&appName=bouquet-db');
-        console.log('✅ Connected to MongoDB\n');
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('Connected to MongoDB\n');
 
         // Initialize analyzer
         const analyzer = new BouquetAnalyzer();

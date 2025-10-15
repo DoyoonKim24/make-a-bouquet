@@ -1,7 +1,6 @@
 const AWS = require('aws-sdk');
 const OpenAI = require('openai');
 const sharp = require('sharp');
-const mongoose = require('mongoose');
 const Bouquet = require('../models/bouquet.model');
 require('dotenv').config();
 
@@ -123,6 +122,7 @@ class BouquetAnalyzer {
             1. Flowers present
             2. Primary colors
             3. Suitable occasions (wedding, birthday, anniversary, etc.)
+            4. The seasons the flowers are typically available in Ontario (Spring, Summer, Fall, Winter)
 
             You can be generous with the occasions if multiple fit.
 
@@ -131,7 +131,8 @@ class BouquetAnalyzer {
                 "flowers": [{"name": "Rose"}],
                 "colors": [{"name": "Red", "prominence": "primary"}],
                 "occasion": "wedding",
-                "title": "Quick title for the bouquet"
+                "title": "Quick title for the bouquet",
+                "seasons": ["Spring", "Summer"]
             }
             `;
 
@@ -182,74 +183,6 @@ class BouquetAnalyzer {
             throw error;
         }
     }
-
-    /**
-     * Determine the seasons when all flowers in a bouquet are available
-     */
-    async determineSeasons(flowers) {
-        try {
-            if (!flowers || flowers.length === 0) {
-                return ['Spring', 'Summer', 'Fall', 'Winter']; // Default to all seasons if no flowers identified
-            }
-
-            const flowerNames = flowers.map(f => f.name).join(', ');
-            
-            const prompt = `
-            For the following flowers: ${flowerNames}
-            
-            You are in Ontario, Canada.
-
-            Determine which seasons where most of these flower (~75%) are in bloom naturally, grown in a greenhouse, or typically imported and available to buy at a store or farmer's market simultaneously. 
-            Consider their natural and commercial growing seasons as well as commonly imported flowers and when they would typically be available together.
-            
-            Return ONLY a JSON array of season names when ALL flowers would be available together, choosing from: ["Spring", "Summer", "Fall", "Winter"]
-            
-            Example response format: ["Spring", "Summer"]
-
-            If some flowers are available year-round (like roses from greenhouses), return ["Spring", "Summer", "Fall", "Winter"].
-            `;
-
-            const response = await this.openai.chat.completions.create({
-                model: "gpt-4o-mini",
-                messages: [
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
-                max_tokens: 200
-            });
-
-            const analysisText = response.choices[0].message.content.trim();
-            
-            // Try to parse JSON from the response
-            let seasons;
-            try {
-                // Clean the response and parse JSON
-                const jsonMatch = analysisText.match(/\[(.*?)\]/s);
-                const cleanJson = jsonMatch ? jsonMatch[0] : analysisText;
-                seasons = JSON.parse(cleanJson);
-                
-                // Validate that all items are valid seasons
-                const validSeasons = ['Spring', 'Summer', 'Fall', 'Winter'];
-                seasons = seasons.filter(season => validSeasons.includes(season));
-                
-                if (seasons.length === 0) {
-                    seasons = ['Spring', 'Summer', 'Fall', 'Winter']; // Default fallback
-                }
-            } catch (parseError) {
-                console.warn('Failed to parse season response, using default:', parseError);
-                seasons = ['Spring', 'Summer', 'Fall', 'Winter']; // Default fallback
-            }
-
-            return seasons;
-
-        } catch (error) {
-            console.error('Error determining seasons:', error);
-            return ['Spring', 'Summer', 'Fall', 'Winter']; // Default fallback
-        }
-    }
-    
 
     /**
      * Process a single image
@@ -372,49 +305,6 @@ class BouquetAnalyzer {
         }
     }
 
-    /**
-     * Get analysis statistics
-     */
-    async getAnalysisStats() {
-        try {
-            const totalBouquets = await Bouquet.countDocuments();
-            const flowerStats = await Bouquet.aggregate([
-                { $unwind: '$flowers' },
-                { $group: { _id: '$flowers.name', count: { $sum: 1 }, avgConfidence: { $avg: '$flowers.confidence' } } },
-                { $sort: { count: -1 } },
-                { $limit: 10 }
-            ]);
-
-            const colorStats = await Bouquet.aggregate([
-                { $unwind: '$colors' },
-                { $group: { _id: '$colors.name', count: { $sum: 1 } } },
-                { $sort: { count: -1 } },
-                { $limit: 10 }
-            ]);
-
-            const styleStats = await Bouquet.aggregate([
-                { $group: { _id: '$style', count: { $sum: 1 } } },
-                { $sort: { count: -1 } }
-            ]);
-
-            const seasonStats = await Bouquet.aggregate([
-                { $unwind: '$seasons' },
-                { $group: { _id: '$seasons', count: { $sum: 1 } } },
-                { $sort: { count: -1 } }
-            ]);
-
-            return {
-                totalBouquets,
-                topFlowers: flowerStats,
-                topColors: colorStats,
-                styleDistribution: styleStats,
-                seasonDistribution: seasonStats
-            };
-        } catch (error) {
-            console.error('Error getting stats:', error);
-            throw error;
-        }
-    }
 }
 
 module.exports = BouquetAnalyzer;

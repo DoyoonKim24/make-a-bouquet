@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const Bouquet = require('./models/bouquet.model');
 const Flower = require('./models/flower.model');
 const BouquetAnalyzer = require('./scripts/bouquet-analyzer');
-const { upload } = require('./config/s3');
 require('dotenv').config();
 
 const app = express();
@@ -88,7 +87,7 @@ app.get('/bouquets', async (req, res) => {
 // Search bouquets by multiple criteria
 app.get('/bouquets/search', async (req, res) => {
     try {
-        const { flowers, colors, occasions } = req.query;
+        const { flowers, colors, occasions, seasons } = req.query;
         
         let conditions = [];
 
@@ -96,14 +95,14 @@ app.get('/bouquets/search', async (req, res) => {
         if (flowers) {
             const flowerList = flowers.split(',').map(f => f.trim());
             conditions.push({
-                $or: flowerList.map(f => ({ 'flowers.name': new RegExp(f, 'i') }))
+                $and: flowerList.map(f => ({ 'flowers.name': new RegExp(f, 'i') }))
             });
         }
         
         if (colors) {
             const colorList = colors.split(',').map(c => c.trim());
             conditions.push({
-                $or: colorList.map(c => ({ 'colors.name': new RegExp(c, 'i') }))
+                $and: colorList.map(c => ({ 'colors.name': new RegExp(c, 'i') }))
             });
         }
 
@@ -111,6 +110,13 @@ app.get('/bouquets/search', async (req, res) => {
             const occasionList = occasions.split(',').map(o => o.trim());
             conditions.push({
                 $or: occasionList.map(o => ({ occasion: new RegExp(o, 'i') }))
+            });
+        }
+
+        if (seasons) {
+            const seasonList = seasons.split(',').map(s => s.trim());
+            conditions.push({
+                $or: seasonList.map(s => ({ seasons: new RegExp(s, 'i') }))
             });
         }
 
