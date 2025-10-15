@@ -27,8 +27,7 @@ export function useFilters(): UseFiltersReturn {
   const fetchFilters = async (): Promise<void> => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${API_BASE_URL}/filters`);
+      const response = await fetch(`https://make-a-bouquet.onrender.com/filters`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
