@@ -9,20 +9,20 @@ const s3 = new AWS.S3({
     region: process.env.AWS_REGION
 });
 
-const bucketName = "flower-thumbnails";
+const bucketName = "bouquet-images";
 
-async function compressAndReplaceImage(key) {
+async function compressAndCreateThumbnail(key) {
     try {
         console.log(`📥 Processing: ${key}`);
         
-        // Download original
+        // Download original high-quality image
         const getParams = { Bucket: bucketName, Key: key };
         const original = await s3.getObject(getParams).promise();
         const originalSize = original.Body.length;
         
-        // Compress
+        // Compress to create thumbnail
         const compressed = await sharp(original.Body)
-            .resize(300, 300, { 
+            .resize(600, 600, { 
                 fit: 'cover',
                 position: 'center'
             })
@@ -31,14 +31,15 @@ async function compressAndReplaceImage(key) {
             
         const compressedSize = compressed.length;
         
-        
-        // Create new key with .webp extension
-        const newKey = key.replace(/\.(jpg|jpeg|png|avif|webp)$/i, '.webp');
+        // Create thumbnail key: move to thumbnails folder and add _thumb suffix
+        const fileName = key.split('/').pop(); // Get filename from path
+        const baseName = fileName.replace(/\.(jpg|jpeg|png|avif|webp)$/i, '');
+        const thumbnailKey = `thumbnails/${baseName}_thumb.webp`;
 
-        // Upload compressed version with new key
+        // Upload compressed version as thumbnail
         const uploadParams = {
             Bucket: bucketName,
-            Key: newKey,
+            Key: thumbnailKey,
             Body: compressed,
             ContentType: 'image/webp',
             ACL: 'public-read'
@@ -46,14 +47,8 @@ async function compressAndReplaceImage(key) {
         
         await s3.upload(uploadParams).promise();
         
-        // Delete original if the key changed
-        if (newKey !== key) {
-            await s3.deleteObject({ Bucket: bucketName, Key: key }).promise();
-            console.log(`🗑️  Deleted original: ${key}`);
-        }
-        
         const savings = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-        console.log(`✅ ${key} → ${newKey}: ${(originalSize/1024).toFixed(1)}KB → ${(compressedSize/1024).toFixed(1)}KB (${savings}% smaller)`);
+        console.log(`✅ ${key} → ${thumbnailKey}: ${(originalSize/1024).toFixed(1)}KB → ${(compressedSize/1024).toFixed(1)}KB (${savings}% smaller)`);
         
         return true;
     } catch (error) {
@@ -64,22 +59,31 @@ async function compressAndReplaceImage(key) {
 
 async function compressAllImages() {
     try {
-        // Get all images
+        // Get all objects in bucket
         const listParams = { Bucket: bucketName };
         const objects = await s3.listObjectsV2(listParams).promise();
         
-        console.log(`🔍 Found ${objects.Contents.length} files to process\n`);
+        // Filter to only process high-quality images (not in thumbnails folder)
+        const highQualityImages = objects.Contents.filter(obj => {
+            const key = obj.Key;
+            // Skip if it's in thumbnails folder
+            if (key.startsWith('thumbnails/')) return false;
+            // Only process image files
+            return /\.(jpg|jpeg|png|avif|webp)$/i.test(key);
+        });
+        
+        console.log(`🔍 Found ${highQualityImages.length} high-quality images to process\n`);
         
         let processed = 0;
         let successful = 0;
         
-        for (const obj of objects.Contents) {
-            const success = await compressAndReplaceImage(obj.Key);
+        for (const obj of highQualityImages) {
+            const success = await compressAndCreateThumbnail(obj.Key);
             if (success) successful++;
             processed++;
         }
         
-        console.log(`\n🎉 Completed! ${successful}/${processed} files successfully compressed and replaced.`);
+        console.log(`\n🎉 Completed! ${successful}/${processed} thumbnails successfully created.`);
         
     } catch (error) {
         console.error('❌ Error:', error.message);
