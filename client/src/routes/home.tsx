@@ -34,9 +34,11 @@ export default function Home() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [focusedBouquet, setFocusedBouquet] = useState<any | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleCreateBouquet = async () => {
     setSearchLoading(true);
+    setHasSearched(true);
     try {
       // Build query parameters
       const params = new URLSearchParams();
@@ -216,6 +218,19 @@ export default function Home() {
             {searchLoading ? 'Searching...' : 'Create Bouquet'}
           </button>
         </div>
+        
+        {/* No results found message */}
+        {hasSearched && bouquets.length === 0 && !searchLoading && (
+          <div className="mt-8 flex flex-col items-center text-center p-8 rounded-lg">
+            <h3 className="text-lg font-semibold text-wine mb-2">No results found</h3>
+            <p className="text-wine mb-4">
+              We couldn't find any bouquets matching your current filters.
+            </p>
+            <p className="text-sm text-wine">
+              Try using less strict filters to see more options.
+            </p>
+          </div>
+        )}
         
         {/* Display results */}
         {bouquets.length > 0 && (
